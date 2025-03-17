@@ -8,10 +8,16 @@ jobs:
     steps:
       - name: Get source
         uses: cloudbees-io/checkout@v1
+      - name: Set up Docker Hub registry
+        uses: cloudbees-io/configure-oci-credentials@v1
+        kind: deploy
+        with:
+          registry: index.docker.io
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - name: build
         kind: build
         uses: cloudbees-io/kaniko@v1
         with:
           dockerfile: Dockerfile
-          destination: hub.docker.com/repository/docker/gmaxey/korean_block_quiz:${{ cloudbees.scm.sha }},hub.docker.com/repository/docker/gmaxey/korean_block_quiz
-          
+          destination: docker.io/gmaxey/korean_block_quiz:0.1-${{ cloudbees.version }},docker.io/gmaxey/korean_block_quiz
