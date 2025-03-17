@@ -13,4 +13,4 @@ jobs:
         uses: cloudbees-io/kaniko@v1
         with:
           dockerfile: Dockerfile
-          destination: https://hub.docker.com/repository/docker/gmaxey
+          destination: https://hub.docker.com/repository/docker/gmaxey/korean_block_quiz:${{ cloudbees.scm.sha }}
