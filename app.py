@@ -1,43 +1,59 @@
-from flask import Flask, render_template, request
-import random
 import os
-from process_words import *  # Import to generate single_block_freq.txt if needed
+from flask import Flask, render_template, jsonify, request
+from process_words import get_korean_words  # Existing function to load words
+import random
 
 app = Flask(__name__)
 
-# Ensure single_block_freq.txt exists
-if not os.path.exists('single_block_freq.txt'):
-    os.system('python3 process_words.py')
-
-# Load single-block words
-with open('single_block_freq.txt', 'r', encoding='utf-8') as f:
-    blocks = [line.split(':')[0] for line in f]
-
-meanings = {
-    '신': 'new / to wear (feet)',
-    '양': 'sheep / quantity',
-    '발': 'foot',
-    '말': 'horse / speech',
-    '책': 'book',
-    '상': 'table / prize'
+# Hardcoded translations (expand this as needed)
+translations = {
+    "사과": "apple",
+    "책": "book",
+    "집": "house",
+    "고양이": "cat",
+    "강아지": "dog",
+    "나무": "tree",
+    "물": "water",
+    "하늘": "sky",
+    "태양": "sun",
+    "달": "moon"
 }
+
+def load_words():
+    # Load Korean words from single_block_freq.txt
+    korean_words = get_korean_words()
+    # Filter to only include words with translations
+    return [word for word in korean_words if word in translations]
 
 @app.route('/')
 def index():
-    word = random.choice(blocks)
-    correct_meaning = meanings.get(word, "Unknown")
-    wrong_options = random.sample([v for k, v in meanings.items() if k != word], 3)
-    options = wrong_options + [correct_meaning]
-    random.shuffle(options)
-    return render_template('index.html', word=word, options=options, correct=correct_meaning)
+    return render_template('index.html')
 
-@app.route('/check', methods=['POST'])
-def check():
-    user_answer = request.form['answer']
-    correct_answer = request.form['correct']
-    result = "Correct!" if user_answer == correct_answer else f"Wrong! Correct answer: {correct_answer}"
-    return render_template('index.html', word=request.form['word'], options=request.form.getlist('options'), 
-                           correct=correct_answer, result=result)
+@app.route('/api/cards', methods=['GET'])
+def get_cards():
+    words = load_words()
+    # Select 5 random words
+    selected_words = random.sample(words, min(5, len(words)))
+    translations_list = [translations[word] for word in selected_words]
+    # Randomize the order of translations
+    random.shuffle(translations_list)
+    return jsonify({
+        'korean': selected_words,
+        'english': translations_list
+    })
+
+@app.route('/api/check_pair', methods=['POST'])
+def check_pair():
+    data = request.get_json()
+    korean = data['korean']
+    english = data['english']
+    # Check if the pair is correct
+    correct = translations.get(korean) == english
+    return jsonify({'correct': correct})
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    if not os.path.exists('single_block_freq.txt'):
+        # Generate the file if it doesn't exist (from your existing logic)
+        from process_words import process_words
+        process_words()
+    app.run(host='0.0.0.0', port=5000, debug=True)

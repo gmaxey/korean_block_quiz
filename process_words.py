@@ -1,21 +1,24 @@
-from wordfreq import word_frequency
 import MeCab
-import os
+import re
+from collections import Counter
 
-mecab_tagger = MeCab.Tagger()
+def process_words():
+    with open('korean.txt', 'r', encoding='utf-8') as file:
+        text = file.read()
+    mecab_tagger = MeCab.Tagger()
+    parsed = mecab_tagger.parse(text)
+    words = [line.split('\t')[0] for line in parsed.split('\n') if line and '\t' in line]
+    single_blocks = [word for word in words if len(re.sub(r'[^\w\s]', '', word)) == 1]
+    freq = Counter(single_blocks)
+    with open('single_block_freq.txt', 'w', encoding='utf-8') as file:
+        for word, count in freq.items():
+            file.write(f"{word}\t{count}\n")
 
-if not os.path.exists('single_block_freq.txt'):
-    with open('korean_words.txt', 'r', encoding='utf-8') as f:
-        words = [line.strip() for line in f]
+def get_korean_words():
+    if not os.path.exists('single_block_freq.txt'):
+        process_words()
+    with open('single_block_freq.txt', 'r', encoding='utf-8') as file:
+        return [line.split('\t')[0] for line in file if line.strip()]
 
-    block_freq = {}
-    for word in words:
-        blocks = [word[i:i+1] for i in range(len(word))]
-        for block in blocks:
-            freq = word_frequency(block, 'ko')
-            block_freq[block] = block_freq.get(block, 0) + freq + 1
-
-    sorted_blocks = sorted(block_freq.items(), key=lambda x: x[1], reverse=True)
-    with open('single_block_freq.txt', 'w', encoding='utf-8') as f:
-        for block, freq in sorted_blocks[:50]:
-            f.write(f"{block}: {freq}\n")
+if __name__ == '__main__':
+    process_words()
