@@ -1,0 +1,18 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+name: build
+on:
+  push:
+    branches:
+      - "**"
+jobs:
+  build:
+    steps:
+      - name: Get source
+        uses: cloudbees-io/checkout@v1
+      - name: build
+        kind: build
+        uses: cloudbees-io/kaniko@v1
+        with:
+          dockerfile: Dockerfile
+          destination: https://hub.docker.com/repository/docker/gmaxey
