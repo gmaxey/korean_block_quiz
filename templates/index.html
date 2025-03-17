@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Korean Single-Block Quiz</title>
+</head>
+<body>
+    <h1>Korean Single-Block Word Quiz</h1>
+    <h2>What does "{{ word }}" mean?</h2>
+    <form method="POST" action="/check">
+        {% for option in options %}
+            <input type="radio" name="answer" value="{{ option }}" required> {{ option }}<br>
+        {% endfor %}
+        <input type="hidden" name="word" value="{{ word }}">
+        <input type="hidden" name="correct" value="{{ correct }}">
+        {% for option in options %}
+            <input type="hidden" name="options" value="{{ option }}">
+        {% endfor %}
+        <input type="submit" value="Submit">
+    </form>
+    {% if result %}
+        <p>{{ result }}</p>
+    {% endif %}
+</body>
+</html>
