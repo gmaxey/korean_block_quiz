@@ -1,4 +1,4 @@
-# Learn Korean by starting with single-block word
+# Learn Korean by starting with single-block words
 
 My prompt to Grok 3:
 
