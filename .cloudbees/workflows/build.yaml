@@ -13,7 +13,7 @@ jobs:
         kind: deploy
         with:
           registry: index.docker.io
-          username: ${{ vars.DOCKERHUB_USERNAME }}
+          username: ${{ secret.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - name: build
         kind: build
