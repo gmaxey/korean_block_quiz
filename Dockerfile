@@ -32,17 +32,14 @@ RUN curl -L -o mecab-ko.tar.gz "https://bitbucket.org/eunjeon/mecab-ko/downloads
 # Verify system MeCab works
 RUN mecab --version
 
-# Update pip and setuptools, then install Python dependencies
+# Update pip and install Python dependencies
 RUN pip3 install --no-cache-dir --upgrade pip setuptools \
     && pip3 install --no-cache-dir flask==2.3.3 wordfreq[cjk]==3.1.1 \
     && pip3 install --no-cache-dir --force-reinstall --no-binary mecab-python3 mecab-python3==1.0.9
 
-# Debug installation
-RUN ls -la /usr/local/lib/python3.10/dist-packages/MeCab \
-    && python3 -c "import sys; print('sys.path:', sys.path)" \
-    && python3 -c "import MeCab; mecab = MeCab.Tagger(); print('MeCab test:', mecab.parse('테스트'))"
+# Download and preprocess Korean words JSONL
+RUN curl -L -o kaikki-korean-words.jsonl "https://kaikki.org/dictionary/Korean/words/kaikki.org-dictionary-Korean-words.jsonl"
 
-# Copy project files
 COPY . /app
 
 EXPOSE 5000

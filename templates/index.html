@@ -7,9 +7,14 @@
     <style>
         .card {
             cursor: pointer;
-            margin: 10px;
-            padding: 20px;
+            margin: 5px;
+            padding: 10px;
             text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1.2em;
+            height: 40px;
+            line-height: 20px;
         }
         .card.selected {
             border: 2px solid blue;
@@ -19,20 +24,44 @@
             color: #333;
             cursor: default;
         }
+        .card.error {
+            border: 2px solid red;
+            animation: flash 0.5s;
+        }
+        @keyframes flash {
+            0% { border-color: red; }
+            50% { border-color: transparent; }
+            100% { border-color: red; }
+        }
+        .card-container {
+            display: flex;
+            flex-direction: column;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .english-card.hidden {
+            visibility: hidden;
+        }
+        .english-card.revealed {
+            visibility: visible;
+        }
+        #reveal-btn {
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
-    <div class="container mt-5">
+    <div class="container mt-3">
         <h1 class="text-center">Korean Block Quiz</h1>
-        <div id="warning" class="alert alert-danger d-none" role="alert"></div>
+        <button id="reveal-btn" class="btn btn-primary d-block mx-auto" title="Hold to reveal aligned translations">Reveal Translations</button>
         <div class="row">
             <div class="col-md-6">
                 <h3>Korean Words</h3>
-                <div id="korean-cards"></div>
+                <div id="korean-cards" class="card-container"></div>
             </div>
             <div class="col-md-6">
                 <h3>English Translations</h3>
-                <div id="english-cards"></div>
+                <div id="english-cards" class="card-container"></div>
             </div>
         </div>
     </div>
@@ -42,24 +71,36 @@
         let selectedKorean = null;
         let selectedEnglish = null;
         let correctCount = 0;
+        let koreanWords = [];
+        let orderedEnglish = [];
+        let shuffledEnglish = [];
+        let matchedPairs = new Map(); // Track matched Korean-English pairs
 
         function loadCards() {
             fetch('/api/cards')
                 .then(response => response.json())
                 .then(data => {
-                    renderCards('korean-cards', data.korean, 'korean');
-                    renderCards('english-cards', data.english, 'english');
+                    koreanWords = data.korean;
+                    orderedEnglish = data.ordered_english;
+                    shuffledEnglish = data.shuffled_english;
+                    matchedPairs.clear(); // Reset matches on new load
+                    renderCards('korean-cards', koreanWords, 'korean');
+                    renderCards('english-cards', shuffledEnglish, 'english');
                 });
         }
 
         function renderCards(containerId, items, type) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
-            items.forEach(item => {
+            items.forEach((item, index) => {
                 const card = document.createElement('div');
                 card.className = 'card';
+                if (type === 'english') {
+                    card.classList.add('english-card');
+                }
                 card.textContent = item;
                 card.dataset[type] = item;
+                card.dataset.index = index; // Store original index for alignment
                 card.onclick = () => selectCard(card, type);
                 container.appendChild(card);
             });
@@ -99,27 +140,65 @@
                     selectedEnglish.classList.remove('selected');
                     selectedKorean.classList.add('matched');
                     selectedEnglish.classList.add('matched');
+                    matchedPairs.set(selectedKorean.textContent, selectedEnglish.textContent);
                     correctCount++;
                     if (correctCount >= 5) {
                         correctCount = 0;
-                        loadCards(); // Refresh cards after 5 correct
+                        loadCards();
                     }
                 } else {
-                    showWarning('Incorrect pair!');
-                    selectedKorean.classList.remove('selected');
-                    selectedEnglish.classList.remove('selected');
+                    selectedKorean.classList.add('error');
+                    selectedEnglish.classList.add('error');
+                    setTimeout(() => {
+                        selectedKorean.classList.remove('error');
+                        selectedEnglish.classList.remove('error');
+                        selectedKorean.classList.remove('selected');
+                        selectedEnglish.classList.remove('selected');
+                    }, 500);
                 }
                 selectedKorean = null;
                 selectedEnglish = null;
             });
         }
 
-        function showWarning(message) {
-            const warning = document.getElementById('warning');
-            warning.textContent = message;
-            warning.classList.remove('d-none');
-            setTimeout(() => warning.classList.add('d-none'), 2000);
-        }
+        const revealBtn = document.getElementById('reveal-btn');
+        revealBtn.addEventListener('mousedown', () => {
+            const koreanCards = document.querySelectorAll('#korean-cards .card');
+            const englishCards = document.querySelectorAll('.english-card');
+            koreanCards.forEach((koreanCard, index) => {
+                const englishCard = englishCards[index];
+                if (!koreanCard.classList.contains('matched')) {
+                    englishCard.textContent = orderedEnglish[index];
+                    englishCard.dataset.english = orderedEnglish[index];
+                    englishCard.classList.remove('hidden');
+                    englishCard.classList.add('revealed');
+                }
+            });
+        });
+        revealBtn.addEventListener('mouseup', () => {
+            const koreanCards = document.querySelectorAll('#korean-cards .card');
+            const englishCards = document.querySelectorAll('.english-card');
+            koreanCards.forEach((koreanCard, index) => {
+                const englishCard = englishCards[index];
+                if (!koreanCard.classList.contains('matched')) {
+                    englishCard.textContent = shuffledEnglish[index];
+                    englishCard.dataset.english = shuffledEnglish[index];
+                    englishCard.classList.remove('revealed');
+                }
+            });
+        });
+        revealBtn.addEventListener('mouseleave', () => {
+            const koreanCards = document.querySelectorAll('#korean-cards .card');
+            const englishCards = document.querySelectorAll('.english-card');
+            koreanCards.forEach((koreanCard, index) => {
+                const englishCard = englishCards[index];
+                if (!koreanCard.classList.contains('matched')) {
+                    englishCard.textContent = shuffledEnglish[index];
+                    englishCard.dataset.english = shuffledEnglish[index];
+                    englishCard.classList.remove('revealed');
+                }
+            });
+        });
 
         // Initial load
         loadCards();
