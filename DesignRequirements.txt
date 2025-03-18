@@ -13,17 +13,17 @@ T2 [x] Locally stored dictionary (tab separated values)
 T3 [ ] Add instructions to README on how to run (run docker...) and use the application
 
 User stories
-U1 [ ] Allow me to select the total number of words to be quizzed on
-U2 [ ] Allow me to select the overall frequency slice, for example, if I choose 100 words to be quized on and I select slice 2, it will quiz me on the 101-200 most common word-blocks
+U1 [x] Allow me to select the total number of words to be quizzed on
+U2 [x] Allow me to select the overall frequency slice, for example, if I choose 100 words to be quized on and I select slice 2, it will quiz me on the 101-200 most common word-blocks
 U3 [x] Show me a list cards with single-block Korean words
 U4 [x] Show me a list cards with the translations of each of the words in a random order
 U5 [x] If I click on a correct block+translation card pair, gray out the pair of cards
 U5 [x] If I click on an incorrect block+translation card pair, signal an error
 U6 [x] Provide a button to reveal the correct translations for the unanswered blocks
-U7 [ ] After I've answered 5 correctly, remove the first 4 correct answers and replace them with new pairs, leaving the most recently answered pair
+U7 [x] After I've answered 5 correctly, remove the first 4 correct answers and replace them with new pairs, leaving the most recently answered pair
 
 UX
-X1 [ ] Korean Block cards can be much narrower, just wide enough to accommodate the block
+X1 [x] Korean Block cards can be much narrower, just wide enough to accommodate the block
 X2 [ ] Handling long translation, maybe trucate, but show entire text with when hovering
 
 Bugs
