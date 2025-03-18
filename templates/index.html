@@ -39,10 +39,10 @@
             max-height: 80vh;
             overflow-y: auto;
         }
-        .english-card.hidden {
+        .reveal-card {
             visibility: hidden;
         }
-        .english-card.revealed {
+        .reveal-card.revealed {
             visibility: visible;
         }
         #reveal-btn {
@@ -53,13 +53,17 @@
 <body>
     <div class="container mt-3">
         <h1 class="text-center">Korean Block Quiz</h1>
-        <button id="reveal-btn" class="btn btn-primary d-block mx-auto" title="Hold to reveal aligned translations">Reveal Translations</button>
+        <button id="reveal-btn" class="btn btn-primary d-block mx-auto" title="Hold to reveal translations">Reveal Translations</button>
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <h3>Korean Words</h3>
                 <div id="korean-cards" class="card-container"></div>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
+                <h3>Answers</h3>
+                <div id="answer-cards" class="card-container"></div>
+            </div>
+            <div class="col-md-4">
                 <h3>English Translations</h3>
                 <div id="english-cards" class="card-container"></div>
             </div>
@@ -71,21 +75,18 @@
         let selectedKorean = null;
         let selectedEnglish = null;
         let correctCount = 0;
-        let koreanWords = [];
         let orderedEnglish = [];
         let shuffledEnglish = [];
-        let matchedPairs = new Map(); // Track matched Korean-English pairs
 
         function loadCards() {
             fetch('/api/cards')
                 .then(response => response.json())
                 .then(data => {
-                    koreanWords = data.korean;
                     orderedEnglish = data.ordered_english;
                     shuffledEnglish = data.shuffled_english;
-                    matchedPairs.clear(); // Reset matches on new load
-                    renderCards('korean-cards', koreanWords, 'korean');
-                    renderCards('english-cards', shuffledEnglish, 'english');
+                    renderCards('korean-cards', data.korean, 'korean');
+                    renderCards('answer-cards', data.ordered_english, 'answer');
+                    renderCards('english-cards', data.shuffled_english, 'english');
                 });
         }
 
@@ -97,11 +98,14 @@
                 card.className = 'card';
                 if (type === 'english') {
                     card.classList.add('english-card');
+                } else if (type === 'answer') {
+                    card.classList.add('reveal-card');
                 }
                 card.textContent = item;
                 card.dataset[type] = item;
-                card.dataset.index = index; // Store original index for alignment
-                card.onclick = () => selectCard(card, type);
+                if (type !== 'answer') {
+                    card.onclick = () => selectCard(card, type);
+                }
                 container.appendChild(card);
             });
         }
@@ -140,7 +144,8 @@
                     selectedEnglish.classList.remove('selected');
                     selectedKorean.classList.add('matched');
                     selectedEnglish.classList.add('matched');
-                    matchedPairs.set(selectedKorean.textContent, selectedEnglish.textContent);
+                    const answerIndex = orderedEnglish.indexOf(selectedEnglish.textContent);
+                    document.querySelectorAll('#answer-cards .reveal-card')[answerIndex].classList.add('matched');
                     correctCount++;
                     if (correctCount >= 5) {
                         correctCount = 0;
@@ -163,40 +168,18 @@
 
         const revealBtn = document.getElementById('reveal-btn');
         revealBtn.addEventListener('mousedown', () => {
-            const koreanCards = document.querySelectorAll('#korean-cards .card');
-            const englishCards = document.querySelectorAll('.english-card');
-            koreanCards.forEach((koreanCard, index) => {
-                const englishCard = englishCards[index];
-                if (!koreanCard.classList.contains('matched')) {
-                    englishCard.textContent = orderedEnglish[index];
-                    englishCard.dataset.english = orderedEnglish[index];
-                    englishCard.classList.remove('hidden');
-                    englishCard.classList.add('revealed');
-                }
+            document.querySelectorAll('.reveal-card:not(.matched)').forEach(card => {
+                card.classList.add('revealed');
             });
         });
         revealBtn.addEventListener('mouseup', () => {
-            const koreanCards = document.querySelectorAll('#korean-cards .card');
-            const englishCards = document.querySelectorAll('.english-card');
-            koreanCards.forEach((koreanCard, index) => {
-                const englishCard = englishCards[index];
-                if (!koreanCard.classList.contains('matched')) {
-                    englishCard.textContent = shuffledEnglish[index];
-                    englishCard.dataset.english = shuffledEnglish[index];
-                    englishCard.classList.remove('revealed');
-                }
+            document.querySelectorAll('.reveal-card:not(.matched)').forEach(card => {
+                card.classList.remove('revealed');
             });
         });
         revealBtn.addEventListener('mouseleave', () => {
-            const koreanCards = document.querySelectorAll('#korean-cards .card');
-            const englishCards = document.querySelectorAll('.english-card');
-            koreanCards.forEach((koreanCard, index) => {
-                const englishCard = englishCards[index];
-                if (!koreanCard.classList.contains('matched')) {
-                    englishCard.textContent = shuffledEnglish[index];
-                    englishCard.dataset.english = shuffledEnglish[index];
-                    englishCard.classList.remove('revealed');
-                }
+            document.querySelectorAll('.reveal-card:not(.matched)').forEach(card => {
+                card.classList.remove('revealed');
             });
         });
 

@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 def load_translations():
     translations = {}
-    used_translations = set()  # Track used translations to avoid duplicates
+    used_translations = set()
     jsonl_file = 'kaikki-korean-words.jsonl'
     if os.path.exists(jsonl_file):
         with open(jsonl_file, 'r', encoding='utf-8') as f:
@@ -35,11 +35,10 @@ def load_translations():
                             match = re.search(r'“([^”]+)”|([a-zA-Z]+(?: [a-zA-Z]+)?)', gloss)
                             if match:
                                 translation = match.group(1) or match.group(2)
-                                # Remove "to " prefix if present
                                 translation = translation.replace("to ", "").strip()
                                 if (translation and 
-                                    all(ord(c) >= 32 and ord(c) <= 126 for c in translation) and  # ASCII only
-                                    len(translation) >= 2 and  # Minimum length for clarity
+                                    all(ord(c) >= 32 and ord(c) <= 126 for c in translation) and 
+                                    len(translation) >= 2 and 
                                     len(translation.split()) <= 2 and 
                                     translation not in used_translations and 
                                     not any(p.lower() in translation.lower() for p in skip_patterns)):
@@ -58,7 +57,6 @@ def load_translations():
                                     translations[word] = cleaned
                                     used_translations.add(cleaned)
                                     break
-    # Fallback to hardcoded if JSONL yields too few valid translations
     if len(translations) < 12:
         hardcoded = {
             "사과": "apple", "책": "book", "집": "house", "물": "water", "불": "fire",
@@ -91,7 +89,6 @@ def get_cards():
     if not words:
         return jsonify({'korean': [], 'english': [], 'shuffled_english': []})
     
-    # Limit to 12 unique pairs
     num_pairs = min(12, len(words))
     if len(words) <= num_pairs:
         selected_words = list(words)
@@ -99,9 +96,7 @@ def get_cards():
         unique_words = random.sample(words, k=num_pairs)
         selected_words = unique_words[:num_pairs]
     
-    # Ordered translations (for reveal)
     ordered_english = [translations[word] for word in selected_words]
-    # Shuffled translations (for initial display)
     shuffled_english = ordered_english.copy()
     random.shuffle(shuffled_english)
     
