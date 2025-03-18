@@ -10,6 +10,7 @@ T2 [ ] Locally stored dictionary (tab separated values)
 	T2.2 [ ] Includes word frequency (how often this block is used as a word)
 	T2.3 [ ] Includes block frequency (how often the block appears in other words)
 	T2.4 [ ] Includes a calculated "overall frequency", let's start with the sum of the block and word frequenies
+T3 [ ] Add instructions to README on how to run (run docker...) and use the application
 
 User stories
 U1 [ ] Allow me to select the total number of words to be quizzed on
