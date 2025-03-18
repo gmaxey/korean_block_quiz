@@ -1,0 +1,22 @@
+Korean Block Quiz App Requirements
+
+[ ] = to do
+[x] = done
+
+Technical
+T1 [x] Containerized Python Web app
+T2 [ ] Locally stored dictionary (tab separated values)
+	T2.1 [ ] If a block has multiple translations, those should be included
+	T2.2 [ ] Includes word frequency (how often this block is used as a word)
+	T2.3 [ ] Includes block frequency (how often the block appears in other words)
+	T2.4 [ ] Includes a calculated "overall frequency", let's start with the sum of the block and word frequenies
+
+User stories
+U1 [ ] Allow me to select the total number of words to be quizzed on
+U2 [ ] Allow me to select the overall frequency slice, for example, if I choose 100 words to be quized on and I select slice 2, it will quiz me on the 101-200 most common word-blocks
+U3 [x] Show me a list cards with single-block Korean words
+U4 [x] Show me a list cards with the translations of each of the words in a random order
+U5 [x] If I click on a correct block+translation card pair, gray out the pair of cards
+U5 [x] If I click on an incorrect block+translation card pair, signal an error
+U6 [x] Provide a button to reveal the correct translations for the unanswered blocks
+U7 [ ] After I've answered 5 correctly, remove the first 4 correct answers and replace them with new pairs, leaving the most recently answered pair
