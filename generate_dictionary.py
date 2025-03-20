@@ -1,107 +1,89 @@
 #!/usr/bin/env python3
 import json
-import csv
-import urllib.request
+import collections
 import re
-from unicodedata import normalize
-from collections import defaultdict
 
-URL = "https://kaikki.org/dictionary/Korean/kaikki.org-dictionary-Korean.jsonl"
-FREQ_LIST_URL = "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/ko/ko_full.txt"
+# File paths
+INPUT_JSONL = "kaikki.org-dictionary-Korean.jsonl"
+OUTPUT_TSV = "dictionary.tsv"
+FREQ_FILE = "korean_freq.txt"
 
 def is_single_block(word):
     return len(word) == 1 and "\uAC00" <= word <= "\uD7A3"
 
-def clean_translations(raw_translations):
-    parts = raw_translations.split(";")
+def extract_translations(entry):
+    translations = []
+    if "senses" in entry:
+        for sense in entry["senses"]:
+            if "glosses" in sense:
+                translations.extend(sense["glosses"])
+    return translations
+
+def simplify_translations(translations):
     cleaned = []
-    # Regex to match Hanja (CJK ideographs) followed by colon and optional space
-    hanja_pattern = re.compile(r'[\u4E00-\u9FFF]+:\s*')
-    
-    for part in parts:
-        part = part.strip()
-        # Skip unwanted metadata
-        if not part or any(x in part.lower() for x in [
-            "(eumhun reading", "(mc reading", "infinitive of", "adnominal of", 
-            "interrogative of", "hortative of", "imperative of", "cause/reason of",
-            "alternative form", "synonym of", "contraction of", "short for"
-        ]):
+    for t in translations:
+        t = t.strip()
+        # E1.3.1: Remove "Short for" entries
+        if t.lower().startswith("short for"):
             continue
-        # Remove Hanja and colon, keep the rest
-        cleaned_part = hanja_pattern.sub('', part)
-        if cleaned_part:
-            cleaned.append(cleaned_part)
-    
-    return ";".join(cleaned).strip(";") or "unknown"
-
-def load_word_frequencies():
-    freq_dict = {}
-    try:
-        with urllib.request.urlopen(FREQ_LIST_URL) as response:
-            for line in response:
-                word, freq = line.decode("utf-8").strip().split(" ", 1)
-                if is_single_block(word):
-                    freq_dict[word] = int(freq)
-        print(f"Loaded frequency list from {FREQ_LIST_URL}")
-    except Exception as e:
-        print(f"Failed to load frequency list: {e}. Using defaults (10, 20).")
-    return freq_dict
-
-def calculate_block_frequencies():
-    block_freq = defaultdict(int)
-    with urllib.request.urlopen(URL) as response:
-        for line in response:
-            entry = json.loads(line.decode("utf-8").strip())
-            word = entry.get("word", "")
-            for char in word:
-                if is_single_block(char):
-                    block_freq[char] += 1
-    return block_freq
-
-def aggregate_entries(word_freq_dict, block_freq_dict):
-    block_data = defaultdict(lambda: {"translations": set(), "word_freq": 10, "block_freq": 20})
-    
-    with urllib.request.urlopen(URL) as response:
-        for line in response:
-            entry = json.loads(line.decode("utf-8").strip())
-            word = entry.get("word", "")
-            
-            if not is_single_block(word):
+        # E1.3.4: Remove Chinese characters and junk
+        t = re.sub(r'[\u4E00-\u9FFF:]+|\(MC reading.*?\)|Alternative form of|More information|\*', '', t).strip()
+        # Skip if empty or no English
+        if not t or not any(c.isascii() for c in t):
+            continue
+        # Keep short phrases (max 3 words)
+        if len(t.split()) <= 3:
+            # E1.3.2: Filter troublesome entries
+            if any(x in t.lower() for x in ["obsolete", "rare", "penis", "shit", "bastard", "(", ")"]):
                 continue
+            cleaned.append(t)
+    # E1.3.2: Return None if no valid translations
+    if not cleaned:
+        return None
+    return ", ".join(cleaned[:3])
 
-            senses = entry.get("senses", [])
-            translations = ";".join(
-                sense.get("glosses", [""])[0] for sense in senses if sense.get("glosses")
-            ) or "unknown"
-            translations = clean_translations(translations)
+def calculate_block_frequencies(jsonl_file):
+    block_counts = collections.defaultdict(int)
+    with open(jsonl_file, "r", encoding="utf-8") as f:
+        for line in f:
+            entry = json.loads(line.strip())
+            word = entry.get("word", "")
+            if len(word) > 1:  # Multi-block words
+                for char in word:
+                    if is_single_block(char):
+                        block_counts[char] += 1
+    return block_counts
 
-            if translations == "unknown" and not block_data[word]["translations"]:
-                continue
+def main():
+    # E1.4: Calculate block frequencies from JSONL
+    block_freqs = calculate_block_frequencies(INPUT_JSONL)
+    single_blocks = {}
 
-            block_data[word]["translations"].add(translations)
-            block_data[word]["word_freq"] = word_freq_dict.get(word, 10)
-            block_data[word]["block_freq"] = block_freq_dict[word]
+    # Process JSONL for single-block words
+    with open(INPUT_JSONL, "r", encoding="utf-8") as f:
+        for line in f:
+            entry = json.loads(line.strip())
+            word = entry.get("word", "")
+            if is_single_block(word):
+                translations = extract_translations(entry)
+                simplified_trans = simplify_translations(translations)
+                if simplified_trans is None:
+                    continue
+                word_freq = 1  # Placeholder
+                block_freq = block_freqs.get(word, 0)
+                overall_freq = word_freq + block_freq
+                single_blocks[word] = (simplified_trans, word_freq, block_freq, overall_freq)
 
-    return block_data
+    # E1.5: Sort by overall_freq (descending)
+    sorted_blocks = sorted(single_blocks.items(), key=lambda x: x[1][3], reverse=True)
 
-def generate_tsv():
-    word_freq_dict = load_word_frequencies()
-    block_freq_dict = calculate_block_frequencies()
-    block_data = aggregate_entries(word_freq_dict, block_freq_dict)
-    
-    with open("dictionary.tsv", "w", encoding="utf-8", newline="") as tsv_file:
-        writer = csv.writer(tsv_file, delimiter="\t")
-        writer.writerow(["block", "translations", "word_freq", "block_freq", "overall_freq"])
-        
-        for block, data in block_data.items():
-            translations = ";".join(data["translations"])
-            word_freq = data["word_freq"]
-            block_freq = data["block_freq"]
-            overall_freq = word_freq + block_freq
-            
-            writer.writerow([block, translations, word_freq, block_freq, overall_freq])
+    # Write to TSV
+    with open(OUTPUT_TSV, "w", encoding="utf-8") as f:
+        f.write("block\ttranslation\tword_freq\tblock_freq\toverall_freq\n")
+        for word, (trans, wf, bf, of) in sorted_blocks:
+            f.write(f"{word}\t{trans}\t{wf}\t{bf}\t{of}\n")
+
+    print(f"Generated {OUTPUT_TSV} with {len(sorted_blocks)} entries")
 
 if __name__ == "__main__":
-    print("Generating dictionary.tsv with frequencies from kaikki.org Korean dictionary...")
-    generate_tsv()
-    print("Done! Check dictionary.tsv")
+    main()

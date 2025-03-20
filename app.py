@@ -12,11 +12,11 @@ def load_dictionary(file_path="dictionary.tsv"):
         reader = csv.DictReader(f, delimiter="\t")
         for row in reader:
             block = row["block"]
-            trans = row["translations"]
-            if not trans.strip() or (trans == "unknown" and float(row["overall_freq"]) <= 30):
+            trans = row["translation"]  # Fixed from "translations"
+            if not trans.strip():
                 continue
             translations[block] = {
-                "translations": trans.split(";"),
+                "translation": trans,
                 "overall_freq": float(row["overall_freq"])
             }
     return translations
@@ -24,12 +24,11 @@ def load_dictionary(file_path="dictionary.tsv"):
 translations = load_dictionary()
 
 def get_quiz_blocks(slice_num=0, num_pairs=12):
-    # Sort blocks by overall_freq descending
     sorted_blocks = sorted(translations.items(), key=lambda x: x[1]["overall_freq"], reverse=True)
     total_blocks = len(sorted_blocks)
-    slice_size = total_blocks // 10  # ~100 blocks per slice
+    slice_size = total_blocks // 10
     start = slice_num * slice_size
-    end = start + slice_size if slice_num < 9 else total_blocks  # Last slice takes remainder
+    end = start + slice_size if slice_num < 9 else total_blocks
     
     candidates = sorted_blocks[start:end]
     if not candidates:
@@ -42,13 +41,13 @@ def index():
 
 @app.route('/api/cards', methods=['GET'])
 def get_cards():
-    slice_num = int(request.args.get('slice', 0))  # 0-9
+    slice_num = int(request.args.get('slice', 0))
     blocks_data = get_quiz_blocks(slice_num)
     if not blocks_data:
         return jsonify({'korean': [], 'english': [], 'shuffled_english': []})
     
     selected_words, selected_data = zip(*blocks_data)
-    ordered_english = [random.choice(data["translations"]) for data in selected_data]
+    ordered_english = [data["translation"] for data in selected_data]
     shuffled_english = ordered_english.copy()
     random.shuffle(shuffled_english)
     
@@ -63,7 +62,7 @@ def check_pair():
     data = request.get_json()
     korean = data['korean']
     english = data['english']
-    correct = english in translations.get(korean, {}).get("translations", [])
+    correct = english == translations.get(korean, {}).get("translation", "")
     return jsonify({'correct': correct})
 
 if __name__ == '__main__':

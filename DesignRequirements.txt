@@ -27,4 +27,21 @@ X1 [x] Korean Block cards can be much narrower, just wide enough to accommodate 
 X2 [ ] Handling long translation, maybe trucate, but show entire text with when hovering
 
 Bugs
-B1 [ ] After a successful selection, clicking a card gives a red indication, second click is fine
+B1 [x] After a successful selection, clicking a card gives a red indication, second click is fine
+B2 [ ] U7 not working as specified, instead a whole new set of blocks are added
+B4 [?] "Answers" don't all correspond to "English Translations"
+
+Enahancemnts
+E1 [x] Create a new dictionary according to this plan
+	E1.1 [x] Create a Python script that can be run in my Ubuntu on Windows 11 enviroment where I have the file kaikki.org-dictionary-Korean.jsonl
+	E1.2 [x] Extract all the single-block words and their definitions from https://kaikki.org/dictionary/Korean/kaikki.org-dictionary-Korean.jsonl
+	E1.3 [x] Reduce the definitions to comma separated English words or short phrases
+		E1.3.1 [x] Remove "Short for" entries
+		E1.3.2 [x] Remove entries that don't have a translation like 릉, 륵, 휴
+		E1.3.2 [x] Remove other troublesome entries Grok identifies
+		E1.3.4 [x] Remove Chinese characters or the entire entry if no English translation available
+	E1.4 [x] Add a relative block frequency to each entry, where the frequency is based on how often the block appears in Korean texts
+	E1.5 [x] Sort the entries by most frequent to least
+	E1.6 [x] Update the quiz app to use this new table, only use the overall_freq for slices
+E2	[x] Reorder the columns in the quiz app: Translation, Korean, Answer
+E3	[ ] More compact view, remove spaces between columns
