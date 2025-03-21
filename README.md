@@ -66,29 +66,43 @@ these steps:
 To run the app locally without Docker (e.g., on Ubuntu for Windows 11 via WSL):
 
 Ensure Python 3 is Installed:
-`python3 --version`
+```
+python3 --version
+```
 
 If not, install:
-```sudo apt update
-sudo apt install python3 python3-pip```
+```
+sudo apt update
+sudo apt install python3 python3-pip
+```
 
 Navigate to Project Directory:
-`cd /path/to/korean-block-quiz`
+```
+cd /path/to/korean-block-quiz
+```
 
 Install Dependencies:
-```pip3 install -r requirements.txt
-pip3 install flask```
+```
+pip3 install -r requirements.txt
+pip3 install flask
+```
 
 Run the App:
-```export FLASK_APP=app.py
-python3 -m flask run --host=0.0.0.0 --port=5000```
---host=0.0.0.0: Makes it accessible from your Windows browser.
---port=5000: Default port (change if needed).
+```
+export FLASK_APP=app.py
+python3 -m flask run --host=0.0.0.0 --port=5000
+```
+
+- `--host=0.0.0.0`: Makes it accessible from your Windows browser.
+- `--port=5000`: Default port (change if needed).
 
 Access the App:
 Open http://localhost:5000 in your Windows browser.
+
 If using WSL2 and localhost fails, find your WSL IP:
-`ip addr show eth0 | grep inet`
+```
+ip addr show eth0 | grep inet
+```
 
 Use the IP (e.g., http://172.18.x.x:5000).
 
