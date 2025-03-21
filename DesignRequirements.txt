@@ -44,4 +44,4 @@ E1 [x] Create a new dictionary according to this plan
 	E1.5 [x] Sort the entries by most frequent to least
 	E1.6 [x] Update the quiz app to use this new table, only use the overall_freq for slices
 E2	[x] Reorder the columns in the quiz app: Translation, Korean, Answer
-E3	[ ] More compact view, remove spaces between columns
+E3	[x] More compact view, remove spaces between columns
