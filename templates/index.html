@@ -38,6 +38,7 @@
         }
         .answer-card {
             text-align: right; /* Right-justified for Answers */
+            padding-right: 15px; /* E5: Indent from the left to separate from Korean */
         }
         .english-card:hover::after, .answer-card:hover::after {
             content: attr(data-fulltext);
@@ -101,13 +102,13 @@
             flex-shrink: 0;
         }
         .answer-col {
-            width: 45%; /* Left column, formerly English */
+            width: 45%; /* Left column */
         }
         .korean-col {
             width: 10%; /* Middle, narrow for 60px cards */
         }
         .english-col {
-            width: 45%; /* Right column, formerly Answers */
+            width: 45%; /* Right column */
         }
         /* Smaller font for column headers */
         h3 {
@@ -121,6 +122,10 @@
         /* Justification for headers */
         .answer-title {
             text-align: right; /* Right-justified Answers title */
+            visibility: hidden; /* E4: Hide by default */
+        }
+        .answer-title.revealed {
+            visibility: visible; /* E4: Show when revealed */
         }
         .english-title {
             text-align: left; /* Left-justified English Translations title */
@@ -180,15 +185,22 @@
         let correctCount = 0;
         let correctPairs = [];
         let missed = [];
+        let currentPairs = []; // Track pairs as {korean, english}
 
         function loadCards() {
             const slice = document.getElementById('slice').value;
             fetch(`/api/cards?slice=${slice}`)
                 .then(response => response.json())
                 .then(data => {
-                    renderCards('korean-cards', data.korean, 'korean');
-                    renderCards('answer-cards', data.ordered_english, 'answer');
-                    renderCards('english-cards', data.shuffled_english, 'english');
+                    // Create pairs from fetched data
+                    currentPairs = data.korean.map((korean, index) => ({
+                        korean: korean,
+                        english: data.ordered_english[index]
+                    }));
+                    const shuffledEnglish = [...data.ordered_english].sort(() => Math.random() - 0.5);
+                    renderCards('korean-cards', currentPairs.map(p => p.korean), 'korean');
+                    renderCards('answer-cards', currentPairs.map(p => p.english), 'answer');
+                    renderCards('english-cards', shuffledEnglish, 'english');
                     correctCount = 0;
                     correctPairs = [];
                     missed = [];
@@ -207,6 +219,12 @@
                 card.textContent = item;
                 card.dataset[type] = item;
                 card.dataset.fulltext = item;
+                // Preserve matched state
+                if (type === 'korean' && correctPairs.some(pair => pair.korean === item)) {
+                    card.classList.add('matched');
+                } else if (type !== 'korean' && correctPairs.some(pair => pair.english === item)) {
+                    card.classList.add('matched');
+                }
                 if (type !== 'answer') card.onclick = () => selectCard(card, type);
                 container.appendChild(card);
             });
@@ -274,56 +292,36 @@
 
         function updateCardSet() {
             if (correctPairs.length >= 5) {
-                const toRemove = correctPairs.slice(0, 4);
-                correctPairs = correctPairs.slice(4);
+                // Keep the 5th pair (most recent match) and unmatched pairs
+                const toRemove = correctPairs.slice(0, 4); // First 4 pairs to remove
+                correctPairs = correctPairs.slice(4); // Keep the 5th pair
+
+                // Filter out the pairs to remove
+                const remainingPairs = currentPairs.filter(pair => 
+                    !toRemove.some(removePair => removePair.korean === pair.korean)
+                );
+
+                // Fetch 4 new pairs
                 const slice = document.getElementById('slice').value;
                 fetch(`/api/cards?slice=${slice}`)
                     .then(response => response.json())
                     .then(data => {
-                        const newKorean = data.korean.slice(0, 4);
-                        const newOrderedEnglish = data.ordered_english.slice(0, 4);
-                        const newShuffledEnglish = data.shuffled_english.slice(0, 4);
+                        const newPairs = data.korean.slice(0, 4).map((korean, index) => ({
+                            korean: korean,
+                            english: data.ordered_english[index]
+                        }));
 
-                        toRemove.forEach(pair => {
-                            const kCard = Array.from(document.querySelectorAll('#korean-cards .card'))
-                                .find(c => c.textContent === pair.korean);
-                            const eCard = Array.from(document.querySelectorAll('#english-cards .card'))
-                                .find(c => c.textContent === pair.english);
-                            const aCard = Array.from(document.querySelectorAll('#answer-cards .card'))
-                                .find(c => c.textContent === pair.english);
-                            if (kCard) kCard.remove();
-                            if (eCard) eCard.remove();
-                            if (aCard) aCard.remove();
-                        });
+                        // Combine remaining and new pairs
+                        currentPairs = [...remainingPairs, ...newPairs];
 
-                        const kContainer = document.getElementById('korean-cards');
-                        const aContainer = document.getElementById('answer-cards');
-                        const eContainer = document.getElementById('english-cards');
-                        newKorean.forEach(item => {
-                            const card = document.createElement('div');
-                            card.className = 'card korean-card';
-                            card.textContent = item;
-                            card.dataset.korean = item;
-                            card.onclick = () => selectCard(card, 'korean');
-                            kContainer.appendChild(card);
-                        });
-                        newOrderedEnglish.forEach(item => {
-                            const card = document.createElement('div');
-                            card.className = 'card answer-card reveal-card';
-                            card.textContent = item;
-                            card.dataset.answer = item;
-                            card.dataset.fulltext = item;
-                            aContainer.appendChild(card);
-                        });
-                        newShuffledEnglish.forEach(item => {
-                            const card = document.createElement('div');
-                            card.className = 'card english-card';
-                            card.textContent = item;
-                            card.dataset.english = item;
-                            card.dataset.fulltext = item;
-                            card.onclick = () => selectCard(card, 'english');
-                            eContainer.appendChild(card);
-                        });
+                        // Render all columns
+                        const korean = currentPairs.map(p => p.korean);
+                        const orderedEnglish = currentPairs.map(p => p.english);
+                        const shuffledEnglish = [...orderedEnglish].sort(() => Math.random() - 0.5);
+
+                        renderCards('korean-cards', korean, 'korean');
+                        renderCards('answer-cards', orderedEnglish, 'answer');
+                        renderCards('english-cards', shuffledEnglish, 'english');
                     });
             }
         }
@@ -347,16 +345,19 @@
             document.querySelectorAll('.reveal-card:not(.matched)').forEach(card => {
                 card.classList.add('revealed');
             });
+            document.querySelector('.answer-title').classList.add('revealed');
         });
         revealBtn.addEventListener('mouseup', () => {
             document.querySelectorAll('.reveal-card:not(.matched)').forEach(card => {
                 card.classList.remove('revealed');
             });
+            document.querySelector('.answer-title').classList.remove('revealed');
         });
         revealBtn.addEventListener('mouseleave', () => {
             document.querySelectorAll('.reveal-card:not(.matched)').forEach(card => {
                 card.classList.remove('revealed');
             });
+            document.querySelector('.answer-title').classList.remove('revealed');
         });
 
         loadCards();

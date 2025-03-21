@@ -28,8 +28,8 @@ X2 [ ] Handling long translation, maybe trucate, but show entire text with when 
 
 Bugs
 B1 [x] After a successful selection, clicking a card gives a red indication, second click is fine
-B2 [ ] U7 not working as specified, instead a whole new set of blocks are added
-B4 [?] "Answers" don't all correspond to "English Translations"
+B2 [x] U7 not working as specified, instead a whole new set of blocks are added
+B4 [x] When U7 occurs, some of the "Answers" are missing; they appear in the translation, but not the 
 
 Enahancemnts
 E1 [x] Create a new dictionary according to this plan
@@ -45,3 +45,5 @@ E1 [x] Create a new dictionary according to this plan
 	E1.6 [x] Update the quiz app to use this new table, only use the overall_freq for slices
 E2	[x] Reorder the columns in the quiz app: Translation, Korean, Answer
 E3	[x] More compact view, remove spaces between columns
+E4	[x] Have the "Answers" column label only appear when pressing the "Reveal" button
+E5	[ ] Indent the "Answers" text so it's not so close to the "Korean" text
