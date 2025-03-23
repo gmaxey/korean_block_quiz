@@ -46,4 +46,12 @@ E1 [x] Create a new dictionary according to this plan
 E2	[x] Reorder the columns in the quiz app: Translation, Korean, Answer
 E3	[x] More compact view, remove spaces between columns
 E4	[x] Have the "Answers" column label only appear when pressing the "Reveal" button
-E5	[ ] Indent the "Answers" text so it's not so close to the "Korean" text
+E5	[x] Improve layout - spacing, more efficient use of spaces
+	E5.1 [x] Remove column headers
+	E5.2 [x] Remove space between Korean and English Translation columns
+	E5.3 [x] Reveal answers should repace English Translations
+	E5.4 [x] Left justify the Korean column (tranlation should follow the Korean column)
+	E5.5 [x] Extend the Translation to the full extend of the page to the right
+E6	[ ] Fine grain control over the pool of words to test on.
+E7	[ ] Scoring
+E8	[ ] Are the multiple entries for the same block in our dictionary? If so, let's update generate_dictionary.py combine the duplicates into a single entry

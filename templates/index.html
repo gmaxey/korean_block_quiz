@@ -1,10 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
+<!-- saved from url=(0022)http://127.0.0.1:5000/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
     <title>Korean single-block word quiz</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="./Korean single-block word quiz_files/bootstrap.min.css" rel="stylesheet">
     <style>
+        /* Normalize box-sizing globally to prevent Bootstrap interference */
+        *, *:before, *:after {
+            box-sizing: border-box;
+        }
         body {
             margin: 0;
         }
@@ -14,31 +18,34 @@
         }
         .card {
             cursor: pointer;
-            margin: 2px 0;
+            margin: 0; /* No individual card margins */
             padding: 5px;
-            text-align: center;
             border: 1px solid #ccc;
             border-radius: 5px;
             font-size: 1.1em;
-            height: 35px;
-            line-height: 25px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* Consistent font */
+            height: 35px; /* Strict 35px height */
+            line-height: 23px; /* Match content area (35px - 5px top - 5px bottom - 1px top border - 1px bottom border = 23px) */
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            display: flex; /* Use flexbox for centering */
+            align-items: center; /* Center content vertically */
+            justify-content: flex-start; /* Align content based on text-align */
         }
         .korean-card {
             width: 60px;
+            text-align: center; /* Center the Korean text */
+            justify-content: center; /* Center the Korean text */
         }
         .english-card, .answer-card {
             width: 100%;
             position: relative;
-        }
-        .english-card {
-            text-align: left; /* Left-justified for English Translations */
+            text-align: left; /* Both English and Answers are left-justified */
+            justify-content: flex-start; /* Align text to the left */
         }
         .answer-card {
-            text-align: right; /* Right-justified for Answers */
-            padding-right: 15px; /* E5: Indent from the left to separate from Korean */
+            padding-right: 0; /* Remove right padding since we're left-justifying */
         }
         .english-card:hover::after, .answer-card:hover::after {
             content: attr(data-fulltext);
@@ -74,6 +81,7 @@
         .card-container {
             display: flex;
             flex-direction: column;
+            gap: 0; /* No gap between cards */
             max-height: 80vh;
             overflow-y: auto;
         }
@@ -89,7 +97,6 @@
         .controls {
             margin-bottom: 10px;
         }
-        /* Force columns to stick together with no gaps */
         .row.g-0 {
             display: flex;
             flex-wrap: nowrap;
@@ -101,34 +108,11 @@
             margin: 0;
             flex-shrink: 0;
         }
-        .answer-col {
-            width: 45%; /* Left column */
-        }
         .korean-col {
-            width: 10%; /* Middle, narrow for 60px cards */
+            width: 60px;
         }
         .english-col {
-            width: 45%; /* Right column */
-        }
-        /* Smaller font for column headers */
-        h3 {
-            font-size: 1rem;
-            margin-bottom: 5px;
-        }
-        /* Add spacing between columns */
-        .answer-col, .korean-col {
-            margin-right: 10px;
-        }
-        /* Justification for headers */
-        .answer-title {
-            text-align: right; /* Right-justified Answers title */
-            visibility: hidden; /* E4: Hide by default */
-        }
-        .answer-title.revealed {
-            visibility: visible; /* E4: Show when revealed */
-        }
-        .english-title {
-            text-align: left; /* Left-justified English Translations title */
+            width: calc(100% - 60px); /* Fit within viewport minus Korean column */
         }
     </style>
 </head>
@@ -153,20 +137,14 @@
             <button id="reveal-btn" class="btn btn-primary" title="Hold to reveal translations">Reveal</button>
         </div>
         <div class="row g-0">
-            <!-- Answers (left) -->
-            <div class="answer-col">
-                <h3 class="answer-title">Answers</h3>
-                <div id="answer-cards" class="card-container"></div>
-            </div>
-            <!-- Korean (middle) -->
+            <!-- Korean (left) -->
             <div class="korean-col">
-                <h3>Korean</h3>
                 <div id="korean-cards" class="card-container"></div>
             </div>
-            <!-- English Translations (right) -->
+            <!-- English Translations / Answers (right) -->
             <div class="english-col">
-                <h3 class="english-title">English Translations</h3>
-                <div id="english-cards" class="card-container"></div>
+                <div id="english-cards" class="card-container" style="display: block;"></div>
+                <div id="answer-cards" class="card-container" style="display: none;"></div>
             </div>
         </div>
         <div class="text-center mt-2">
@@ -178,21 +156,20 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="./Korean single-block word quiz_files/bootstrap.bundle.min.js.download"></script>
     <script>
         let selectedKorean = null;
         let selectedEnglish = null;
         let correctCount = 0;
         let correctPairs = [];
         let missed = [];
-        let currentPairs = []; // Track pairs as {korean, english}
+        let currentPairs = [];
 
         function loadCards() {
             const slice = document.getElementById('slice').value;
             fetch(`/api/cards?slice=${slice}`)
                 .then(response => response.json())
                 .then(data => {
-                    // Create pairs from fetched data
                     currentPairs = data.korean.map((korean, index) => ({
                         korean: korean,
                         english: data.ordered_english[index]
@@ -219,13 +196,14 @@
                 card.textContent = item;
                 card.dataset[type] = item;
                 card.dataset.fulltext = item;
-                // Preserve matched state
                 if (type === 'korean' && correctPairs.some(pair => pair.korean === item)) {
                     card.classList.add('matched');
                 } else if (type !== 'korean' && correctPairs.some(pair => pair.english === item)) {
                     card.classList.add('matched');
                 }
-                if (type !== 'answer') card.onclick = () => selectCard(card, type);
+                if (type === 'korean' || type === 'english') {
+                    card.onclick = () => selectCard(card, type);
+                }
                 container.appendChild(card);
             });
         }
@@ -270,8 +248,9 @@
                     updateScore();
                     selectedKorean = null;
                     selectedEnglish = null;
-                    if (correctCount >= 5) updateCardSet();
-                    if (correctCount >= 12) showReview();
+                    if (correctCount >= 12) {
+                        showReview();
+                    }
                 } else {
                     missed.push(selectedKorean.textContent);
                     selectedKorean.classList.add('error');
@@ -290,42 +269,6 @@
             document.getElementById('score').textContent = correctCount;
         }
 
-        function updateCardSet() {
-            if (correctPairs.length >= 5) {
-                // Keep the 5th pair (most recent match) and unmatched pairs
-                const toRemove = correctPairs.slice(0, 4); // First 4 pairs to remove
-                correctPairs = correctPairs.slice(4); // Keep the 5th pair
-
-                // Filter out the pairs to remove
-                const remainingPairs = currentPairs.filter(pair => 
-                    !toRemove.some(removePair => removePair.korean === pair.korean)
-                );
-
-                // Fetch 4 new pairs
-                const slice = document.getElementById('slice').value;
-                fetch(`/api/cards?slice=${slice}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        const newPairs = data.korean.slice(0, 4).map((korean, index) => ({
-                            korean: korean,
-                            english: data.ordered_english[index]
-                        }));
-
-                        // Combine remaining and new pairs
-                        currentPairs = [...remainingPairs, ...newPairs];
-
-                        // Render all columns
-                        const korean = currentPairs.map(p => p.korean);
-                        const orderedEnglish = currentPairs.map(p => p.english);
-                        const shuffledEnglish = [...orderedEnglish].sort(() => Math.random() - 0.5);
-
-                        renderCards('korean-cards', korean, 'korean');
-                        renderCards('answer-cards', orderedEnglish, 'answer');
-                        renderCards('english-cards', shuffledEnglish, 'english');
-                    });
-            }
-        }
-
         function showReview() {
             if (missed.length > 0) {
                 const missedList = document.getElementById('missed-list');
@@ -342,25 +285,64 @@
         document.getElementById('restart-btn').addEventListener('click', loadCards);
         const revealBtn = document.getElementById('reveal-btn');
         revealBtn.addEventListener('mousedown', () => {
+            document.getElementById('english-cards').style.display = 'none';
+            document.getElementById('answer-cards').style.display = 'block';
             document.querySelectorAll('.reveal-card:not(.matched)').forEach(card => {
                 card.classList.add('revealed');
             });
-            document.querySelector('.answer-title').classList.add('revealed');
         });
         revealBtn.addEventListener('mouseup', () => {
+            document.getElementById('english-cards').style.display = 'block';
+            document.getElementById('answer-cards').style.display = 'none';
             document.querySelectorAll('.reveal-card:not(.matched)').forEach(card => {
                 card.classList.remove('revealed');
             });
-            document.querySelector('.answer-title').classList.remove('revealed');
         });
         revealBtn.addEventListener('mouseleave', () => {
+            document.getElementById('english-cards').style.display = 'block';
+            document.getElementById('answer-cards').style.display = 'none';
             document.querySelectorAll('.reveal-card:not(.matched)').forEach(card => {
                 card.classList.remove('revealed');
             });
-            document.querySelector('.answer-title').classList.remove('revealed');
         });
 
         loadCards();
     </script>
-</body>
-</html>
+    <script>
+        (function() {
+            function c() {
+                var b = a.contentDocument || a.contentWindow.document;
+                if (b) {
+                    var d = b.createElement('script');
+                    d.innerHTML = "window.__CF$cv$params={r:'924ff42eac75dd1e',t:'MTc0Mjc1NDE0Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+                    b.getElementsByTagName('head')[0].appendChild(d);
+                }
+            }
+            if (document.body) {
+                var a = document.createElement('iframe');
+                a.height = 1;
+                a.width = 1;
+                a.style.position = 'absolute';
+                a.style.top = 0;
+                a.style.left = 0;
+                a.style.border = 'none';
+                a.style.visibility = 'hidden';
+                document.body.appendChild(a);
+                if ('loading' !== document.readyState) {
+                    c();
+                } else if (window.addEventListener) {
+                    document.addEventListener('DOMContentLoaded', c);
+                } else {
+                    var e = document.onreadystatechange || function() {};
+                    document.onreadystatechange = function(b) {
+                        e(b);
+                        if ('loading' !== document.readyState) {
+                            document.onreadystatechange = e;
+                            c();
+                        }
+                    };
+                }
+            }
+        })();
+    </script>
+</body></html>
