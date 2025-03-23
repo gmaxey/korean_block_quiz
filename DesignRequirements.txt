@@ -54,4 +54,4 @@ E5	[x] Improve layout - spacing, more efficient use of spaces
 	E5.5 [x] Extend the Translation to the full extend of the page to the right
 E6	[ ] Fine grain control over the pool of words to test on.
 E7	[ ] Scoring
-E8	[ ] Are the multiple entries for the same block in our dictionary? If so, let's update generate_dictionary.py combine the duplicates into a single entry
+E8	[x] Are the multiple entries for the same block in our dictionary? If so, let's update generate_dictionary.py combine the duplicates into a single entry
