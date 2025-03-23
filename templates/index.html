@@ -248,9 +248,8 @@
                     updateScore();
                     selectedKorean = null;
                     selectedEnglish = null;
-                    if (correctCount >= 12) {
-                        showReview();
-                    }
+                    if (correctCount >= 5) updateCardSet();
+                    if (correctCount >= 12) showReview();
                 } else {
                     missed.push(selectedKorean.textContent);
                     selectedKorean.classList.add('error');
@@ -267,6 +266,32 @@
 
         function updateScore() {
             document.getElementById('score').textContent = correctCount;
+        }
+
+        function updateCardSet() {
+            if (correctPairs.length >= 5) {
+                const toRemove = correctPairs.slice(0, 4);
+                correctPairs = correctPairs.slice(4);
+                const remainingPairs = currentPairs.filter(pair => 
+                    !toRemove.some(removePair => removePair.korean === pair.korean)
+                );
+                const slice = document.getElementById('slice').value;
+                fetch(`/api/cards?slice=${slice}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const newPairs = data.korean.slice(0, 4).map((korean, index) => ({
+                            korean: korean,
+                            english: data.ordered_english[index]
+                        }));
+                        currentPairs = [...remainingPairs, ...newPairs];
+                        const korean = currentPairs.map(p => p.korean);
+                        const orderedEnglish = currentPairs.map(p => p.english);
+                        const shuffledEnglish = [...orderedEnglish].sort(() => Math.random() - 0.5);
+                        renderCards('korean-cards', korean, 'korean');
+                        renderCards('answer-cards', orderedEnglish, 'answer');
+                        renderCards('english-cards', shuffledEnglish, 'english');
+                    });
+            }
         }
 
         function showReview() {

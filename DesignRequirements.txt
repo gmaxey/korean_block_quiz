@@ -29,7 +29,7 @@ X2 [ ] Handling long translation, maybe trucate, but show entire text with when 
 Bugs
 B1 [x] After a successful selection, clicking a card gives a red indication, second click is fine
 B2 [x] U7 not working as specified, instead a whole new set of blocks are added
-B4 [x] When U7 occurs, some of the "Answers" are missing; they appear in the translation, but not the 
+B4 [x] When U7 occurs, some of the "Answers" are missing; they appear in the translation, but not the
 
 Enahancemnts
 E1 [x] Create a new dictionary according to this plan
@@ -55,3 +55,6 @@ E5	[x] Improve layout - spacing, more efficient use of spaces
 E6	[ ] Fine grain control over the pool of words to test on.
 E7	[ ] Scoring
 E8	[x] Are the multiple entries for the same block in our dictionary? If so, let's update generate_dictionary.py combine the duplicates into a single entry
+
+Regressions
+R1	[x]	U7 is no longer working. Once five correct answers have been made, the first four pairs (Korean word + Answer blocks) correctly answered should be replace with new pairs. 
